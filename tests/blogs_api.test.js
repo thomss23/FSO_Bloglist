@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
-const helper = require('../utils/list_helper')
+const helper = require('../utils/blogs_helper')
 const Blog = require('../models/blog')
 
 const api = supertest(app)
@@ -81,6 +81,67 @@ test('if a blog is added without the title property, it should return 400', asyn
       .post('/api/blogs')
       .send(newBlogWithoutLikes)
       .expect(400)
+})
+
+describe('deletion of a blog', () => { 
+    test("succeeds with status 204 if id is valid", async () => {
+        const blogsAtDbInit = await helper.blogsInTheDB()
+        const blogToBeDeleted = blogsAtDbInit[0]
+
+        await api
+          .delete(`/api/blogs/${blogToBeDeleted.id}`)
+          .expect(204)
+
+        const blogsAfterDeleteOperation = await helper.blogsInTheDB()
+
+        expect(blogsAfterDeleteOperation).toHaveLength(helper.initialBlogs.length - 1)
+
+        const titles = blogsAfterDeleteOperation.map(blog => blog.title)
+
+        expect(titles).not.toContain(blogToBeDeleted.title)
+    })
+})
+
+describe('updating a blog', () => { 
+    test("succeeds with status 200 if id is valid and the blog is updated", async () => {
+        const blogsAtDbInit = await helper.blogsInTheDB()
+        const blogToBeUpdated = blogsAtDbInit[0]
+
+        const updatedBlogInfo = {
+            title: "someTitle",
+            author: "someAuthor",
+            likes: 1000
+        }
+
+        const result = await api
+          .put(`/api/blogs/${blogToBeUpdated.id}`)
+          .send(updatedBlogInfo)
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
+
+        const blogAfterUpdateOperation = await helper.getBlogByIdFromDB(blogToBeUpdated.id)
+
+        expect(result.body.title).toBe('someTitle')
+        
+        expect(blogAfterUpdateOperation.id).toBe(blogToBeUpdated.id)
+        expect(blogAfterUpdateOperation.title).toBe('someTitle')
+        expect(blogAfterUpdateOperation.author).toBe('someAuthor')
+        expect(blogAfterUpdateOperation.likes).toBe(1000)
+    })
+
+    test("fails with status 404 if id is not valid", async () => {
+        const updatedBlogInfo = {
+            title: "someTitle",
+            author: "someAuthor",
+            likes: 1000
+        }
+
+        await api
+          .put(`/api/blogs/${helper.nonExistingId}`)
+          .send(updatedBlogInfo)
+          .expect(404)
+
+    })
 })
 
 afterAll(() => {
