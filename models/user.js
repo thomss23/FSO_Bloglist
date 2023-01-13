@@ -3,7 +3,13 @@ const mongoose = require('mongoose')
 const userSchema = new mongoose.Schema({
   username: String,
   name: String,
-  passwordHash: String
+  passwordHash: String,
+  blogs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Blog'
+    }
+  ],
 })
 
 userSchema.set('toJSON', {
@@ -14,8 +20,8 @@ userSchema.set('toJSON', {
       // the passwordHash should not be revealed
       delete returnedObject.passwordHash
     }
-  })
+})
   
-  const User = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema)
   
-  module.exports = User
+module.exports = User
