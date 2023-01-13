@@ -1,4 +1,6 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
+const bcrypt = require('bcrypt')
 const blogRouter = require('express').Router()
 
 blogRouter.get('/', async (request, response) => {

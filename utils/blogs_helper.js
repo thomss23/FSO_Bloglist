@@ -13,7 +13,7 @@ const initialBlogs = [
         url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
         likes: 12,
     }
-  ]
+]
   
 const blogsInTheDB = async () => {
     const blogs = await Blog.find({})
