@@ -1,7 +1,4 @@
 const Blog = require('../models/blog')
-const User = require('../models/user')
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcrypt')
 const blogRouter = require('express').Router()
 
 blogRouter.get('/', async (request, response) => {
@@ -11,20 +8,13 @@ blogRouter.get('/', async (request, response) => {
 })
 
 blogRouter.post('/', async (request, response) => {
+
   if(!request.body.title || !request.body.url) {
     response.status(400).end()
     return
   }
 
-  // const token = getTokenFromRequest(request)
-  console.log(request.token)
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-
-  if(!decodedToken.id) {
-    return response.status(401).json({error: 'token missing or invalid'})
-  }
-
-  const user = await User.findById(decodedToken.id)
+  const user = request.user
 
   const blogToBeSaved = new Blog({
     title: request.body.title,
@@ -44,12 +34,31 @@ blogRouter.post('/', async (request, response) => {
 })
 
 blogRouter.delete('/:id', async (request,response, next) => {
+
   try {
-    await Blog.findByIdAndRemove(request.params.id)
-    response.status(204).end()
+    const blog = await Blog.findById(request.params.id)
+
+    if(!blog) {
+      return response.status(404).json({ message: 'Blog not found' })
+    }
+
+    const user = request.user
+
+    if(blog.user.toString() === user._id.toString()) {
+      await Blog.deleteOne({ _id: request.params.id })
+
+      const index = user.blogs.indexOf(request.params.id)
+      user.blogs.splice(index, 1)
+
+      await user.save()
+    } else {
+      return response.status(401).json({ message: 'Unauthorized' })
+    }
+
   } catch(error) {
     next(error)
   }
+  response.status(204).end()
 })
 
 blogRouter.put('/:id', async (request, response, next) => {
@@ -62,7 +71,7 @@ blogRouter.put('/:id', async (request, response, next) => {
   }
 
   try {
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {new: true})
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
     response.json(updatedBlog)
   } catch (error) {
     next(error)
