@@ -1,5 +1,7 @@
 const Blog = require('../models/blog')
 const blogRouter = require('express').Router()
+const middleware = require('../utils/middleware')
+
 
 blogRouter.get('/', async (request, response) => {
 
@@ -7,7 +9,7 @@ blogRouter.get('/', async (request, response) => {
   response.json(blogs)
 })
 
-blogRouter.post('/', async (request, response) => {
+blogRouter.post('/', middleware.userExtrator, async (request, response) => {
 
   if(!request.body.title || !request.body.url) {
     response.status(400).end()
@@ -33,7 +35,7 @@ blogRouter.post('/', async (request, response) => {
   response.status(201).json(savedBlog)
 })
 
-blogRouter.delete('/:id', async (request,response, next) => {
+blogRouter.delete('/:id', middleware.userExtrator, async (request,response, next) => {
 
   try {
     const blog = await Blog.findById(request.params.id)
