@@ -65,15 +65,21 @@ blogRouter.delete('/:id', middleware.userExtrator, async (request,response, next
 
 blogRouter.put('/:id', async (request, response, next) => {
   const body = request.body
+  const userId = body.user
 
-  const blog = {
+  const blogObject = {
     author: body.author,
     title : body.title,
     likes : body.likes
   }
 
+  const blog = await Blog.findById(request.params.id)
+  if (blog.user.toString() !== userId.toString()) {
+    return response.status(401).json({ error: 'Not authorized to update this blog' })
+  }
+
   try {
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blogObject, { new: true })
     response.json(updatedBlog)
   } catch (error) {
     next(error)
