@@ -63,10 +63,10 @@ blogRouter.delete('/:id', middleware.userExtrator, async (request,response, next
   response.status(204).end()
 })
 
-blogRouter.put('/:id', async (request, response, next) => {
+blogRouter.put('/:id',  middleware.userExtrator, async (request, response, next) => {
   const body = request.body
-  const userId = body.user
-
+  // const userId = body.user
+  const userId = request.user._id
   const blogObject = {
     author: body.author,
     title : body.title,
